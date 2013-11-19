@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tables>
+	<table name="eaglelog">
+		<columns>
+			<column name="traceid" type="string" />
+			<column name="traceid_num" type="long" />
+			<column name="traceip" type="string" />
+			<column name="tracetime" type="long" />
+			<column name="time" type="date" />
+			<column name="host" type="string" />
+			<column name="rpcID" type="string" />
+			<column name="rpcType" type="int" />
+			<column name="serviceID" type="string" />
+			<column name="responseSize" type="int" />			
+			<column name="remoteIP" type="string" />		
+			<column name="clientAppName" type="string" />
+			<column name="serverAppName" type="string" />
+			<column name="span0" type="int" />
+			<column name="span1" type="int" />
+			<column name="idToken" type="string" />
+			<column name="extInfo" type="string" />
+			<column name="unitToken" type="string" />
+			<column name="hsfToken" type="string" />
+			<column name="groupToken" type="string" />
+		</columns>
+		<primaryKey>ID</primaryKey>
+	</table>
+</tables>

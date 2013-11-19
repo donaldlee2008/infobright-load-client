@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="gb2312"?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+<beans>
+	<bean id="vtabroot" class="com.taobao.tddl.interact.rule.VirtualTableRoot"
+		init-method="init">
+		<property name="dbType" value="MYSQL" />
+		<property name="tableRules">
+			<map>
+				<entry key="hsflog" value-ref="hsflog" />
+			</map>
+		</property>
+	</bean>
+
+    <!--  
+	<bean id="hsflog" init-method="init"
+ 		class="com.taobao.tddl.interact.rule.TableRule"> 
+
+		<property name="dbNamePattern" value="eaglelog"/>
+
+		<property name="tbRuleArray">
+		<list>
+			<value>
+			    return "hsflog_"  + (#traceid,1,2#.toString().hashCode().abs().longValue() % 2) + "_" + (#days,1,5#.longValue()%5);
+			</value>
+			<value>
+			    return "hsflog_"  + (#traceid,1,2#.toString().hashCode().abs().longValue() % 2) + "_" + "0|1|2|3|4";
+			</value>
+			<value>
+			    return "hsflog_"  + "0|1" + "_" + (#days,1,5#.longValue()%5);
+			</value>
+			</list>
+		</property>
+		<property name="allowFullTableScan" value="true"/>
+	</bean>
+	-->
+	
+	<bean id="hsflog" init-method="init"
+		class="com.taobao.tddl.interact.rule.TableRule">
+
+		<property name="dbNamePattern" value="eaglelog"/>
+
+		<property name="tbRuleArray">
+			<value>
+			return "hsflog_"  + (#traceid_num,1,2# % 2) + "_" + (#time_days,1,5# % 5);
+			</value>
+		</property>
+		<property name="allowFullTableScan" value="true"/>
+	</bean>
+</beans>

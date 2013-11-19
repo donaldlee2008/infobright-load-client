@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="gb2312"?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+<beans>
+	<bean id="vtabroot" class="com.taobao.tddl.interact.rule.VirtualTableRoot"
+		init-method="init">
+		<property name="dbType" value="MYSQL" />
+		<property name="tableRules">
+			<map>
+				<entry key="eaglelog" value-ref="eaglelog" />
+			</map>
+		</property>
+	</bean>
+
+	<bean id="eaglelog" init-method="init"
+		class="com.taobao.tddl.interact.rule.TableRule">
+
+		<property name="dbNamePattern" value="eagleeye" />
+
+		<property name="tbRuleArray">
+			<value>
+				return "eaglelog_" +
+				(#traceid,1,4#.toString().hashCode().abs().longValue() % 4) + "_" +
+				(#tracetime_days,1,5#.longValue()%5);
+			</value>
+		</property>
+		<property name="allowFullTableScan" value="true" />
+	</bean>
+
+</beans>
