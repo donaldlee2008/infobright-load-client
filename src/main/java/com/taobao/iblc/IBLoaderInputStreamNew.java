@@ -2,38 +2,50 @@ package com.taobao.iblc;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.taobao.iblc.conf.IBLConfig;
+import com.taobao.iblc.pojo.DataBlock;
 import com.taobao.iblc.pojo.DataPack;
 
-public class IBLoaderInputStream extends InputStream {
+public class IBLoaderInputStreamNew extends InputStream {
 	protected final static Logger logger = LoggerFactory
 			.getLogger(IBLoaderInputStream.class);
+	
 	private BlockingQueue<DataPack> queue = null;
+	
 	private String actualTableName = null;
+	
 	private int maxReadByteCount = 0;
 	private int readByteCount = 0;
-	//private DataPack curDP = null;
+	
+	private LinkedList<DataBlock> dataArea; 
 	private byte buffer[] = null;
 	private int buffer_len = 0;
 	private int buffer_off = 0;
 	//private static String charset = IBLConfig.charset;
 
-	public IBLoaderInputStream(BlockingQueue<DataPack> queue) {
+	public IBLoaderInputStreamNew(BlockingQueue<DataPack> queue) {
 		super();
 		this.queue = queue;
 	}
 	
-	public void init() throws InterruptedException{
+	public void init(){
 		DataPack curDP = null;
-		curDP = queue.take();
-		
+		try {
+			curDP = queue.take();
+		} catch (InterruptedException e) {
+			logger.error("InterruptedException!!!", e);
+		}
 		this.actualTableName = curDP.getActualTableName();
-		buildBuffer(curDP);		
+		//buildBuffer(curDP);
+		this.dataArea = curDP.getDataArea();
+		buildBuffer(this.dataArea);
 		curDP = null;
 		this.readByteCount = 0;
 		this.maxReadByteCount = IBLConfig.maxReadByteCount;
@@ -76,19 +88,23 @@ public class IBLoaderInputStream extends InputStream {
 	private int readOneTime(byte[] b, int off, int len) {
 
 		if (this.buffer_len == 0) {
-			if (this.readByteCount < this.maxReadByteCount) {
-				DataPack dp = queue.peek();
-				if(dp != null && !dp.getActualTableName().equals(this.getActualTableName()))
-					return (-1);
-				DataPack curDP = queue.poll();
-				if (curDP != null) {
-					buildBuffer(curDP);
-					curDP = null;
+			if (buildBuffer(this.dataArea) != 0) {
+				if (this.readByteCount < this.maxReadByteCount) {
+					DataPack dp = queue.peek();
+					if (dp != null && !dp.getActualTableName().equals(
+									this.getActualTableName()))
+						return (-1);
+					DataPack curDP = queue.poll();
+					if (curDP != null) {
+						this.dataArea = curDP.getDataArea();
+						buildBuffer(this.dataArea);
+						curDP = null;
+					} else {
+						return (-1);
+					}
 				} else {
 					return (-1);
 				}
-			}else{
-				return (-1);
 			}
 		}
 
@@ -111,6 +127,18 @@ public class IBLoaderInputStream extends InputStream {
 		this.buffer_off = 0;
 	}
 	
+	private int buildBuffer(LinkedList<DataBlock> dataArea){
+		if(dataArea.peek() == null){
+			return -1;
+		}
+		DataBlock db = dataArea.removeFirst();
+	    this.buffer = db.getData();		
+		this.buffer_len = db.getLen();
+		this.buffer_off = 0;
+		//System.out.println("buildBuffer :"+this.buffer_len);
+		return 0;
+	}
+	
 	public String getActualTableName() {
 		return actualTableName;
 	}
@@ -119,6 +147,4 @@ public class IBLoaderInputStream extends InputStream {
 		this.actualTableName = actualTableName;
 	}
 	
-	
-
 }

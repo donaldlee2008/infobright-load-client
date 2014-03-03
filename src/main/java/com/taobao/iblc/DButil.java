@@ -11,6 +11,8 @@ import java.sql.SQLException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.taobao.iblc.conf.IBLConfig;
+
 
 public class DButil {
 	protected final static Logger logger = LoggerFactory.getLogger(DButil.class);
@@ -39,7 +41,7 @@ public class DButil {
     
     public static com.mysql.jdbc.PreparedStatement getLoadMysqlStatement(Connection conn,String loadDataSql){
     	PreparedStatement statement = null;
-    	//logger.info(loadDataSql);  
+    	logger.debug(loadDataSql);  
     	try {
 			statement = conn.prepareStatement(loadDataSql);
 		} catch (SQLException e) {

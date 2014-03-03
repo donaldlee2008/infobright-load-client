@@ -1,33 +1,35 @@
 package com.taobao.iblc;
 
-
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
+
 import java.util.concurrent.BlockingQueue;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.taobao.iblc.conf.IBLConfig;
+import com.taobao.iblc.pojo.DataPack;
+
 public class IBLoaderNew implements Runnable{
 	protected final static Logger logger = LoggerFactory
-			.getLogger(IBLoader.class);
+			.getLogger(IBLoaderNew.class);
 
 	private String id = null;
 
 	private Connection ibconn = null;
 
-	private BlockingQueue<DataPack> queue = null;
-	
-//	private long saveTime = 0;
-//	private long printInterval = 8000;
+	private BlockingQueue<DataPack> queue = null;	
 
 	//private static String charset = IBLConfig.charset;
 	private long interval = IBLConfig.interval;// idle between load
+	
+	private int finished = 0;
 
-	public IBLoaderNew(String id2, BlockingQueue<DataPack> bq) {
-		this.id = id2;
-		this.queue = bq;
+	public IBLoaderNew(String id, BlockingQueue<DataPack> q) {
+		this.id = id;
+		this.queue = q;
 	}
 
 	private void stop() {
@@ -36,42 +38,46 @@ public class IBLoaderNew implements Runnable{
 			if (ibconn != null)
 				ibconn.close();
 		} catch (SQLException e) {
-			logger.info("close jdbc statment or connection error!!!", e);
+			logger.error("close jdbc connection error!!!", e);
+		} catch (Exception e) {
+			logger.error("close jdbc connection error!!!", e);
+		}finally{
+			
 		}
 	}
 	
 	public void run() {
-		//this.saveTime = System.currentTimeMillis();
+		// this.saveTime = System.currentTimeMillis();
 		while (true) {
-			// logger.info("new loop!!!");
-//			if(System.currentTimeMillis() - this.saveTime > this.printInterval){
-//				logger.info("Queue size: "+this.queue.size());
-//				this.saveTime = System.currentTimeMillis();
-//			}
-			
 			IBLoaderInputStream is = null;
-			//DataPack dp = null;
+			// IBLoaderInputStreamNew is = null;
 			com.mysql.jdbc.PreparedStatement mysqlStatement = null;
-			try {
-                
+				
+			if(finished == 1 && queue.size() == 0 ){
+				stop();
+				break;
+			}
+			try {	
 				is = new IBLoaderInputStream(queue);
+				// is = new IBLoaderInputStreamNew(queue);
 				is.init();
 				// obtain PreparedStatement for load data into infobright.
-				mysqlStatement = obtainLoadMysqlStatement(is.getActualTableName());
-				// logger.info("start load!!!");
+				mysqlStatement = obtainLoadMysqlStatement(is
+						.getActualTableName());
+
 				DButil.loadData(mysqlStatement, is);
-				logger.info("current Queue size: "+this.queue.size());
-				// sleep after load.
-				Thread.sleep(this.interval);
+				
+//				if(queue.size()>=IBLConfig.loadQueueSize/5)
+//				    logger.info("current Queue size: " + queue.size());
 
 			} catch (InterruptedException e) {
-				logger.info("ibloader stop when take task from queue or sleep between loading");
-				stop();
+				logger.info("ibloader stop when take task from queue",e);				
+				finished = 1;
 			} catch (SQLException e) {
-				logger.error("load failed！！", e);
-				// logger.error(dp.getData().toString().replace(IBLConfig.lineSep,'\n'));
-				// InfoLoaderUtil.processFatal("load failed！！",e);
-			} finally {
+				logger.error("load failed!!!", e);
+			} catch (Exception e) {
+				logger.error("load failed!!!", e);
+			}finally {
 				try {
 					if (null != is)
 						is.close();
@@ -81,12 +87,13 @@ public class IBLoaderNew implements Runnable{
 					logger.info("close inputstream error!!!", e);
 				} catch (SQLException e) {
 					logger.info("close mysqlStatement error!!!", e);
+				} catch (Exception e) {
+					logger.error("close inputstream or mysqlStatement error!!!", e);
 				}
 			}
-
 		}
 	}
-	
+
 	private com.mysql.jdbc.PreparedStatement obtainLoadMysqlStatement(
 			String tblName) {
 

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="gb2312"?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+<beans>
+	<bean id="vtabroot" class="com.taobao.tddl.interact.rule.VirtualTableRoot"
+		init-method="init">
+		<property name="dbType" value="MYSQL" />
+		<property name="tableRules">
+			<map>
+				<entry key="notify_msg" value-ref="notify_msg" />
+				<entry key="notify_msg_delivery" value-ref="notify_msg_delivery" />
+			</map>
+		</property>
+	</bean>
+
+	<bean id="notify_msg" init-method="init"
+		class="com.taobao.tddl.interact.rule.TableRule">
+
+		<property name="dbNamePattern" value="notify_track_group_{0}"/>
+		<property name="dbRuleArray">
+			<value>(#message_id?,1,4#.toString().hashCode().abs().longValue() % 4).intdiv(2)</value>
+		</property>
+		<property name="tbRuleArray">
+			<value>
+			return "notify_msg_"  + (#message_id?,1,4#.toString().hashCode().abs().longValue() % 4) + "_" + (#gmt_create_days?,1,30#.longValue()%30);
+			</value>
+		</property>
+		<property name="allowFullTableScan" value="true"/>
+	</bean>
+	
+	<bean id="notify_msg_delivery" init-method="init"
+		class="com.taobao.tddl.interact.rule.TableRule">
+
+		<property name="dbNamePattern" value="notify_track_group_{0}"/>
+		<property name="dbRuleArray">
+			<value>(#message_id?,1,4#.toString().hashCode().abs().longValue() % 4).intdiv(2)</value>
+		</property>
+		<property name="tbRuleArray">
+			<value>
+			return "notify_msg_delivery_"  + (#message_id?,1,4#.toString().hashCode().abs().longValue() % 4) + "_" + (#gmt_delivery_days?,1,30#.longValue()%30);
+			</value>
+		</property>
+		<property name="allowFullTableScan" value="true"/>
+	</bean>
+</beans>
